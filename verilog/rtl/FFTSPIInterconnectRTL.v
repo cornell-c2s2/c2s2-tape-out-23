@@ -5252,6 +5252,10 @@ module tape_in_FFT_interconnectVRTL (
 	);
 endmodule
 module FFTSPIInterconnectRTL (
+	`ifdef USE_POWER_PINS
+    inout vccd1,	// User area 1 1.8V supply
+    inout vssd1,	// User area 1 digital ground
+	`endif
 	adapter_parity,
 	clk,
 	minion_parity,
@@ -5272,11 +5276,7 @@ module FFTSPIInterconnectRTL (
 	minion_sclk,
 	minion_sclk_2,
 	minion_sclk_3,
-	io_oeb,
-  	`ifdef USE_POWER_PINS
-    inout vccd1,	// User area 1 1.8V supply
-    inout vssd1	// User area 1 digital ground
-	`endif
+	io_oeb
 	
 );
 	output wire [0:0] adapter_parity;
@@ -5299,9 +5299,9 @@ module FFTSPIInterconnectRTL (
 	input wire [0:0] minion_sclk;
 	input wire [0:0] minion_sclk_2;
 	input wire [0:0] minion_sclk_3;
-	output wire [18:0] io_oeb;
+	output wire [17:0] io_oeb;
 
-	assign io_oeb = 19'b100001110111011100;
+	assign io_oeb = 18'b00001110111011100;
 	tape_in_FFT_interconnectVRTL #(
 		.BIT_WIDTH(32),
 		.DECIMAL_PT(16),
