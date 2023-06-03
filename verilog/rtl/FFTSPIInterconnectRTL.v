@@ -5276,7 +5276,7 @@ module FFTSPIInterconnectRTL (
 	input  minion_sclk,
 	input  minion_sclk_2,
 	input  minion_sclk_3,
-	output io_oeb
+	output [ 17:0 ] io_oeb
 	
 );
 
