@@ -64,11 +64,6 @@ module loopback_16_tb;
   reg clock = 1'b0;
   always #12.5 clock = ~clock;
 
-  // Clock for user defined project
-
-  reg clk = 1'b0;
-  always #5 clk = ~clk;
-
   //----------------------------------------------------------------------
   // Instantiate Caravel and SPI Flash
   //----------------------------------------------------------------------
@@ -318,8 +313,8 @@ module loopback_16_tb;
     // This is how we wait for the firmware to configure the IO ports
     wait (checkbits == 4'hA);
 
-    wait (clk == 1);
-    wait (clk == 0);
+    wait (clock == 1);
+    wait (clock == 0);
     cycle_count = 0;
 
     #(`CYCLE_TIME/2);
