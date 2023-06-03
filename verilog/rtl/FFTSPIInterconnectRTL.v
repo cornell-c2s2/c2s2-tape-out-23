@@ -5252,56 +5252,35 @@ module tape_in_FFT_interconnectVRTL (
 	);
 endmodule
 module FFTSPIInterconnectRTL (
-	adapter_parity,
-	clk,
-	minion_parity,
-	reset,
-	minion_cs,
-	minion_cs_2,
-	minion_cs_3,
-	minion_miso,
-	minion_miso_2,
-	minion_miso_3,
-	minion_mosi,
-	minion_mosi_2,
-	minion_mosi_3,
-	master_cs,
-	master_miso,
-	master_mosi,
-	master_sclk,
-	minion_sclk,
-	minion_sclk_2,
-	minion_sclk_3,
-	io_oeb,
-  	`ifdef USE_POWER_PINS
+	`ifdef USE_POWER_PINS
     inout vccd1,	// User area 1 1.8V supply
-    inout vssd1	// User area 1 digital ground
+    inout vssd1,	// User area 1 digital ground
 	`endif
+	output adapter_parity,
+	input  clk,
+	output minion_parity,
+	input  reset,
+	input  minion_cs,
+	input  minion_cs_2,
+	input  minion_cs_3,
+	output minion_miso,
+	output minion_miso_2,
+	output minion_miso_3,
+	input  minion_mosi,
+	input  minion_mosi_2,
+	input  minion_mosi_3,
+	output master_cs,
+	input  master_miso,
+	output master_mosi,
+	output master_sclk,
+	input  minion_sclk,
+	input  minion_sclk_2,
+	input  minion_sclk_3,
+	output io_oeb
 	
 );
-	output wire [0:0] adapter_parity;
-	input wire [0:0] clk;
-	output wire [0:0] minion_parity;
-	input wire [0:0] reset;
-	input wire [0:0] minion_cs;
-	input wire [0:0] minion_cs_2;
-	input wire [0:0] minion_cs_3;
-	output wire [0:0] minion_miso;
-	output wire [0:0] minion_miso_2;
-	output wire [0:0] minion_miso_3;
-	input wire [0:0] minion_mosi;
-	input wire [0:0] minion_mosi_2;
-	input wire [0:0] minion_mosi_3;
-	output wire [0:0] master_cs;
-	input wire [0:0] master_miso;
-	output wire [0:0] master_mosi;
-	output wire [0:0] master_sclk;
-	input wire [0:0] minion_sclk;
-	input wire [0:0] minion_sclk_2;
-	input wire [0:0] minion_sclk_3;
-	output wire [18:0] io_oeb;
 
-	assign io_oeb = 19'b100001110111011100;
+	assign io_oeb = 18'b001001110111011100;
 	tape_in_FFT_interconnectVRTL #(
 		.BIT_WIDTH(32),
 		.DECIMAL_PT(16),
