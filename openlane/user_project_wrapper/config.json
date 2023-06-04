@@ -7,8 +7,8 @@
     "ROUTING_CORES": 1,
     "CLOCK_PERIOD": 25,
     "CLOCK_PORT": "wb_clk_i",
-    "CLOCK_NET": "mprj.clk",
-    "FP_PDN_MACRO_HOOKS": "mprj vccd1 vssd1 vccd1 vssd1",
+    "CLOCK_NET": "fft_spi.clk",
+    "FP_PDN_MACRO_HOOKS": "fft_spi vccd1 vssd1 vccd1 vssd1",
     "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
     "MAGIC_DEF_LABELS": 0,
     "VERILOG_FILES_BLACKBOX": ["dir::../../verilog/rtl/defines.v", 
@@ -99,3 +99,4 @@
         "MAGIC_WRITE_FULL_LEF": 0
     }
 }
+
