@@ -3316,7 +3316,7 @@ module FFTVRTL (
 	input wire reset;
 	input wire clk;
 	wire [(N_SAMPLES * BIT_WIDTH) - 1:0] real_msg [$clog2(N_SAMPLES):0];
-	reg [(N_SAMPLES * BIT_WIDTH) - 1:0] complex_msg [$clog2(N_SAMPLES):0];
+	wire [(N_SAMPLES * BIT_WIDTH) - 1:0] complex_msg [$clog2(N_SAMPLES):0];
 	wire val_in [$clog2(N_SAMPLES):0];
 	wire rdy_in [$clog2(N_SAMPLES):0];
 	wire [(N_SAMPLES * BIT_WIDTH) - 1:0] sine_wave_out;
@@ -3324,13 +3324,12 @@ module FFTVRTL (
 	assign recv_rdy = rdy_in[0];
 	assign send_val = val_in[$clog2(N_SAMPLES)];
 	assign rdy_in[$clog2(N_SAMPLES)] = send_rdy;
-	always @(*) begin : sv2v_autoblock_1
-		reg signed [31:0] i;
-		for (i = 0; i < N_SAMPLES; i = i + 1)
-			complex_msg[0][i * BIT_WIDTH+:BIT_WIDTH] = 32'b00000000000000000000000000000000;
-	end
+	genvar l;
 	generate
-		if (N_SAMPLES == 512) begin : genblk1
+		for (l = 0; l < N_SAMPLES; l = l + 1) begin : genblk1
+			assign complex_msg[0][l * BIT_WIDTH+:BIT_WIDTH] = {BIT_WIDTH {1'b0}};
+		end
+		if (N_SAMPLES == 512) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][256 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][128 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -3845,7 +3844,7 @@ module FFTVRTL (
 			assign real_msg[0][511 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[511 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_512VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 256) begin : genblk1
+		else if (N_SAMPLES == 256) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][128 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][64 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -4104,7 +4103,7 @@ module FFTVRTL (
 			assign real_msg[0][255 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[255 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_256VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 128) begin : genblk1
+		else if (N_SAMPLES == 128) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][64 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][32 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -4235,7 +4234,7 @@ module FFTVRTL (
 			assign real_msg[0][127 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[127 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_128VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 64) begin : genblk1
+		else if (N_SAMPLES == 64) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][32 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][16 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -4302,7 +4301,7 @@ module FFTVRTL (
 			assign real_msg[0][63 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[63 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_64VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 32) begin : genblk1
+		else if (N_SAMPLES == 32) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][16 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][8 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -4337,7 +4336,7 @@ module FFTVRTL (
 			assign real_msg[0][31 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[31 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_32VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 16) begin : genblk1
+		else if (N_SAMPLES == 16) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][8 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][4 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -4356,7 +4355,7 @@ module FFTVRTL (
 			assign real_msg[0][15 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[15 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_16VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 8) begin : genblk1
+		else if (N_SAMPLES == 8) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][4 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][2 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
@@ -4367,14 +4366,14 @@ module FFTVRTL (
 			assign real_msg[0][7 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[7 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_8VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 4) begin : genblk1
+		else if (N_SAMPLES == 4) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][2 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][BIT_WIDTH+:BIT_WIDTH] = recv_msg[2 * BIT_WIDTH+:BIT_WIDTH];
 			assign real_msg[0][3 * BIT_WIDTH+:BIT_WIDTH] = recv_msg[3 * BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_4VRTL SineWave(.sine_wave_out(sine_wave_out));
 		end
-		else if (N_SAMPLES == 2) begin : genblk1
+		else if (N_SAMPLES == 2) begin : genblk2
 			assign real_msg[0][0+:BIT_WIDTH] = recv_msg[0+:BIT_WIDTH];
 			assign real_msg[0][BIT_WIDTH+:BIT_WIDTH] = recv_msg[BIT_WIDTH+:BIT_WIDTH];
 			SineWave__BIT_WIDTH_32__DECIMAL_POINT_16__SIZE_FFT_2VRTL SineWave(.sine_wave_out(sine_wave_out));
@@ -4383,9 +4382,7 @@ module FFTVRTL (
 	genvar i;
 	genvar b;
 	generate
-		for (i = 0; i < $clog2(N_SAMPLES); i = i + 1) begin : genblk2
-			wire [N_SAMPLES * BIT_WIDTH:1] sv2v_tmp_fft_stage_send_msg_imag;
-			always @(*) complex_msg[i + 1] = sv2v_tmp_fft_stage_send_msg_imag;
+		for (i = 0; i < $clog2(N_SAMPLES); i = i + 1) begin : genblk3
 			FFT_StageVRTL #(
 				.BIT_WIDTH(BIT_WIDTH),
 				.DECIMAL_PT(DECIMAL_PT),
@@ -4397,7 +4394,7 @@ module FFTVRTL (
 				.recv_val(val_in[i]),
 				.recv_rdy(rdy_in[i]),
 				.send_msg_real(real_msg[i + 1]),
-				.send_msg_imag(sv2v_tmp_fft_stage_send_msg_imag),
+				.send_msg_imag(complex_msg[i + 1]),
 				.send_val(val_in[i + 1]),
 				.send_rdy(rdy_in[i + 1]),
 				.sine_wave_out(sine_wave_out),
@@ -4406,7 +4403,7 @@ module FFTVRTL (
 			);
 		end
 	endgenerate
-	always @(*) begin : sv2v_autoblock_2
+	always @(*) begin : sv2v_autoblock_1
 		reg signed [31:0] i;
 		for (i = 0; i < N_SAMPLES; i = i + 1)
 			send_msg[i * BIT_WIDTH+:BIT_WIDTH] = real_msg[$clog2(N_SAMPLES)][i * BIT_WIDTH+:BIT_WIDTH];
