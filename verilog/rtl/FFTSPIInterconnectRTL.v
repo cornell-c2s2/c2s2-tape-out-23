@@ -84,33 +84,6 @@ module vc_EnResetReg (
 		if (reset || en)
 			q <= (reset ? p_reset_value : d);
 endmodule
-module SPI_minion_components_Synchronizer (
-	clk,
-	in_,
-	negedge_,
-	out,
-	posedge_,
-	reset
-);
-	parameter reset_value = 1'b0;
-	input wire clk;
-	input wire in_;
-	output reg negedge_;
-	output wire out;
-	output reg posedge_;
-	input wire reset;
-	reg [2:0] shreg;
-	always @(*) begin
-		negedge_ = shreg[2] & ~shreg[1];
-		posedge_ = ~shreg[2] & shreg[1];
-	end
-	always @(posedge clk)
-		if (reset)
-			shreg <= {3 {reset_value}};
-		else
-			shreg <= {shreg[1:0], in_};
-	assign out = shreg[1];
-endmodule
 module SPIMasterValRdyVRTL (
 	clk,
 	reset,
@@ -407,6 +380,33 @@ module SPI_minion_components_ShiftReg (
 			out <= load_data;
 		else if (~load_en & shift_en)
 			out <= {out[nbits - 2:0], in_};
+endmodule
+module SPI_minion_components_Synchronizer (
+	clk,
+	in_,
+	negedge_,
+	out,
+	posedge_,
+	reset
+);
+	parameter reset_value = 1'b0;
+	input wire clk;
+	input wire in_;
+	output reg negedge_;
+	output wire out;
+	output reg posedge_;
+	input wire reset;
+	reg [2:0] shreg;
+	always @(*) begin
+		negedge_ = shreg[2] & ~shreg[1];
+		posedge_ = ~shreg[2] & shreg[1];
+	end
+	always @(posedge clk)
+		if (reset)
+			shreg <= {3 {reset_value}};
+		else
+			shreg <= {shreg[1:0], in_};
+	assign out = shreg[1];
 endmodule
 module SPI_minion_components_SPIMinionVRTL (
 	clk,
@@ -909,7 +909,105 @@ module vc_Trace (
 );
 	input wire clk;
 	input wire reset;
-	
+	integer len0;
+	integer len1;
+	integer idx0;
+	integer idx1;
+	localparam nchars = 512;
+	localparam nbits = 4096;
+	wire [4095:0] storage;
+	integer cycles_next = 0;
+	integer cycles = 0;
+	reg [3:0] level;
+	initial if (!$value$plusargs("trace=%d", level))
+		level = 0;
+	always @(posedge clk) cycles <= (reset ? 0 : cycles_next);
+	task append_str;
+		output reg [4095:0] trace;
+		input reg [4095:0] str;
+		begin
+			len0 = 1;
+			while (str[len0 * 8+:8] != 0) len0 = len0 + 1;
+			idx0 = trace[31:0];
+			for (idx1 = len0 - 1; idx1 >= 0; idx1 = idx1 - 1)
+				begin
+					trace[idx0 * 8+:8] = str[idx1 * 8+:8];
+					idx0 = idx0 - 1;
+				end
+			trace[31:0] = idx0;
+		end
+	endtask
+	task append_str_ljust;
+		output reg [4095:0] trace;
+		input reg [4095:0] str;
+		begin
+			idx0 = trace[31:0];
+			idx1 = nchars;
+			while (str[(idx1 * 8) - 1-:8] != 0) begin
+				trace[idx0 * 8+:8] = str[(idx1 * 8) - 1-:8];
+				idx0 = idx0 - 1;
+				idx1 = idx1 - 1;
+			end
+			trace[31:0] = idx0;
+		end
+	endtask
+	task append_chars;
+		output reg [4095:0] trace;
+		input reg [7:0] char;
+		input integer num;
+		begin
+			idx0 = trace[31:0];
+			for (idx1 = 0; idx1 < num; idx1 = idx1 + 1)
+				begin
+					trace[idx0 * 8+:8] = char;
+					idx0 = idx0 - 1;
+				end
+			trace[31:0] = idx0;
+		end
+	endtask
+	task append_val_str;
+		output reg [4095:0] trace;
+		input reg val;
+		input reg [4095:0] str;
+		begin
+			len1 = 0;
+			while (str[len1 * 8+:8] != 0) len1 = len1 + 1;
+			if (val)
+				append_str(trace, str);
+			else if (!val)
+				append_chars(trace, " ", len1);
+			else begin
+				append_str(trace, "x");
+				append_chars(trace, " ", len1 - 1);
+			end
+		end
+	endtask
+	task append_val_rdy_str;
+		output reg [4095:0] trace;
+		input reg val;
+		input reg rdy;
+		input reg [4095:0] str;
+		begin
+			len1 = 0;
+			while (str[len1 * 8+:8] != 0) len1 = len1 + 1;
+			if (val & rdy)
+				append_str(trace, str);
+			else if (rdy && !val)
+				append_chars(trace, " ", len1);
+			else if (!rdy && !val) begin
+				append_str(trace, ".");
+				append_chars(trace, " ", len1 - 1);
+			end
+			else if (!rdy && val) begin
+				append_str(trace, "#");
+				append_chars(trace, " ", len1 - 1);
+			end
+			else begin
+				append_str(trace, "x");
+				append_chars(trace, " ", len1 - 1);
+			end
+		end
+	endtask
 endmodule
 module vc_QueueCtrl1 (
 	clk,
@@ -3104,14 +3202,24 @@ module FFT_StageVRTL (
 	wire [((N_SAMPLES / 2) * BIT_WIDTH) - 1:0] twiddle_imaginary;
 	wire val_interior_mini [(N_SAMPLES / 2) - 1:0];
 	wire rdy_interior_mini [(N_SAMPLES / 2) - 1:0];
+	reg [(N_SAMPLES * BIT_WIDTH) - 1:0] recv_msg_real_fourstate;
+	reg [(N_SAMPLES * BIT_WIDTH) - 1:0] recv_msg_imag_fourstate;
+	always @(*) begin : sv2v_autoblock_1
+		reg signed [31:0] i;
+		for (i = 0; i < N_SAMPLES; i = i + 1)
+			begin
+				recv_msg_real_fourstate[i * BIT_WIDTH+:BIT_WIDTH] = recv_msg_real[i * BIT_WIDTH+:BIT_WIDTH] & {BIT_WIDTH {recv_val}};
+				recv_msg_imag_fourstate[i * BIT_WIDTH+:BIT_WIDTH] = recv_msg_imag[i * BIT_WIDTH+:BIT_WIDTH] & {BIT_WIDTH {recv_val}};
+			end
+	end
 	CombinationalFFTCrossbarVRTl #(
 		.BIT_WIDTH(BIT_WIDTH),
 		.SIZE_FFT(N_SAMPLES),
 		.STAGE_FFT(STAGE_FFT),
 		.FRONT(1)
 	) xbar_in_1(
-		.recv_real(recv_msg_real),
-		.recv_imaginary(recv_msg_imag),
+		.recv_real(recv_msg_real_fourstate),
+		.recv_imaginary(recv_msg_imag_fourstate),
 		.recv_val(val_in),
 		.recv_rdy(rdy_in),
 		.send_real(butterfly_in_real[BIT_WIDTH * ((N_SAMPLES - 1) - (N_SAMPLES - 1))+:BIT_WIDTH * N_SAMPLES]),
@@ -3219,7 +3327,7 @@ module FFTVRTL (
 	always @(*) begin : sv2v_autoblock_1
 		reg signed [31:0] i;
 		for (i = 0; i < N_SAMPLES; i = i + 1)
-			complex_msg[0][i * BIT_WIDTH+:BIT_WIDTH] = 0;
+			complex_msg[0][i * BIT_WIDTH+:BIT_WIDTH] = 32'b00000000000000000000000000000000;
 	end
 	generate
 		if (N_SAMPLES == 512) begin : genblk1
@@ -5007,6 +5115,8 @@ module tape_in_FFT_interconnectVRTL (
 	wire spi_minion_send_val;
 	wire spi_minion_send_rdy;
 	wire [(BIT_WIDTH + MAX_ADDRESSABLE_SRC_LOG2) - 1:0] spi_minion_send_msg;
+	wire [(BIT_WIDTH + MAX_ADDRESSABLE_SRC_LOG2) - 1:0] spi_minion_send_msg_fourstate;
+	assign spi_minion_send_msg = spi_minion_send_msg_fourstate & {BIT_WIDTH + MAX_ADDRESSABLE_SRC_LOG2 {spi_minion_send_val}};
 	wire spi_minion_recv_val;
 	wire spi_minion_recv_rdy;
 	wire [(BIT_WIDTH + MAX_ADDRESSABLE_SRC_LOG2) - 1:0] spi_minion_recv_msg;
@@ -5019,6 +5129,8 @@ module tape_in_FFT_interconnectVRTL (
 	wire spi_master_send_val;
 	wire spi_master_send_rdy;
 	wire [BIT_WIDTH - 1:0] spi_master_send_msg;
+	wire [BIT_WIDTH - 1:0] spi_master_send_msg_fourstate;
+	assign spi_master_send_msg = spi_master_send_msg_fourstate & {BIT_WIDTH {spi_master_send_val}};
 	wire spi_master_recv_val;
 	wire spi_master_recv_rdy;
 	wire [BIT_WIDTH - 1:0] spi_master_recv_msg;
@@ -5043,14 +5155,6 @@ module tape_in_FFT_interconnectVRTL (
 	wire [0:1] master_cs_temp;
 	wire [(BIT_WIDTH + MAX_ADDRESSABLE_SRC_LOG2) - 1:0] arb_imm;
 	wire deserializer_reset;
-	genvar i;
-	generate
-		for (i = 10; i < MAX_ADDRESSABLE_SRCS_POW_2; i = i + 1) begin : genblk1
-			assign module_interconnect_src_rdy[i] = 0;
-			assign module_interconnect_snk_val[i] = 0;
-			assign module_interconnect_snk_msg[(15 - i) * BIT_WIDTH+:BIT_WIDTH] = 0;
-		end
-	endgenerate
 	SPIMinionAdapterConnectedVRTL #(
 		.BIT_WIDTH(BIT_WIDTH + MAX_ADDRESSABLE_SRC_LOG2),
 		.N_SAMPLES(N_SAMPLES)
@@ -5064,7 +5168,7 @@ module tape_in_FFT_interconnectVRTL (
 		.recv_msg(spi_minion_recv_msg),
 		.recv_rdy(spi_minion_recv_rdy),
 		.recv_val(spi_minion_recv_val),
-		.send_msg(spi_minion_send_msg),
+		.send_msg(spi_minion_send_msg_fourstate),
 		.send_rdy(spi_minion_send_rdy),
 		.send_val(spi_minion_send_val),
 		.minion_parity(minion_parity),
@@ -5181,7 +5285,7 @@ module tape_in_FFT_interconnectVRTL (
 		.recv_msg(spi_master_recv_msg),
 		.send_val(spi_master_send_val),
 		.send_rdy(spi_master_send_rdy),
-		.send_msg(spi_master_send_msg),
+		.send_msg(spi_master_send_msg_fourstate),
 		.packet_size_ifc_val(module_interconnect_src_val[5]),
 		.packet_size_ifc_rdy(module_interconnect_src_rdy[5]),
 		.packet_size_ifc_msg({1'b0, module_interconnect_src_msg[(10 * BIT_WIDTH) + ((BIT_WIDTH - 1) >= (BIT_WIDTH - 6) ? BIT_WIDTH - 1 : ((BIT_WIDTH - 1) + ((BIT_WIDTH - 1) >= (BIT_WIDTH - 6) ? ((BIT_WIDTH - 1) - (BIT_WIDTH - 6)) + 1 : ((BIT_WIDTH - 6) - (BIT_WIDTH - 1)) + 1)) - 1)-:((BIT_WIDTH - 1) >= (BIT_WIDTH - 6) ? ((BIT_WIDTH - 1) - (BIT_WIDTH - 6)) + 1 : ((BIT_WIDTH - 6) - (BIT_WIDTH - 1)) + 1)]}),
