@@ -1,5 +1,5 @@
 //========================================================================
-// loopback_16_tb
+// master_bypass_random_64_tb
 //========================================================================
 
 `default_nettype none
@@ -23,7 +23,7 @@
 `define VTB_TEST_FAIL(lineno, out, ref, port_name) \
     $display("- Timestamp      : %0d (default unit: ns)", $time); \
     $display("- Cycle number   : %0d (variable: cycle_count)", cycle_count); \
-    $display("- line number    : line %0d in loopback_16_tb.v.cases", lineno); \
+    $display("- line number    : line %0d in master_bypass_random_64_tb.v.cases", lineno); \
     $display("- port name      : %s", port_name); \
     $display("- expected value : 0x%x", ref); \
     $display("- actual value   : 0x%x", out); \
@@ -53,7 +53,7 @@
 // Top-Level Test Harness
 //========================================================================
 
-module loopback_16_tb;
+module master_bypass_random_64_tb;
 
   //----------------------------------------------------------------------
   // Create clocks
@@ -114,7 +114,7 @@ module loopback_16_tb;
 
   spiflash
   #(
-    .FILENAME ("loopback_16.hex")
+    .FILENAME ("master_bypass_random_64.hex")
   )
   spiflash
   (
@@ -225,8 +225,8 @@ module loopback_16_tb;
   //----------------------------------------------------------------------
 
   initial begin
-    $dumpfile("loopback_16.vcd");
-    $dumpvars(0, loopback_16_tb);
+    $dumpfile("master_bypass_random_64.vcd");
+    $dumpvars(0, master_bypass_random_64_tb);
     #1;
 
     // Repeat cycles of 1000 clock edges as needed to complete testbench
@@ -327,7 +327,7 @@ module loopback_16_tb;
     // 2 cycles plus input delay
 
     // Start test
-    `include "loopback_16_tb.v.cases"
+    `include "master_bypass_random_64_tb.v.cases"
 
     $display("");
     $display("  [ passed ]");
