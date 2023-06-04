@@ -5284,7 +5284,7 @@ module FFTSPIInterconnectRTL (
 	tape_in_FFT_interconnectVRTL #(
 		.BIT_WIDTH(32),
 		.DECIMAL_PT(16),
-		.N_SAMPLES(4)
+		.N_SAMPLES(64)
 	) v(
 		.adapter_parity(adapter_parity),
 		.clk(clk),
