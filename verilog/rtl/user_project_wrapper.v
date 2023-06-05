@@ -119,11 +119,11 @@ FFTSPIInterconnectRTL fft_spi
   // Output Enables
 
 
-  .io_oeb         (  )
+  .io_oeb         ( io_oeb[24:7] )
 );
 
-assign io_oeb[24:7] = 18'b001001110111011100; // Will Fed up the io_oeb due to sleep deprivation so assigning it here so we 
-//don't need to wait like 16 hours to push through the flow again. 
+//logo_svg logo();
+
 endmodule	// user_project_wrapper
 
 `default_nettype wire
